@@ -11,11 +11,11 @@ class AgentInfo(BaseModel):
 
     key: str = Field(
         description="Agent key.",
-        examples=["research-assistant"],
+        examples=["code-reviewer"],
     )
     description: str = Field(
         description="Description of the agent.",
-        examples=["A research assistant for generating research papers."],
+        examples=["A Python Code Reviewer."],
     )
 
 
@@ -30,7 +30,7 @@ class ServiceMetadata(BaseModel):
     )
     default_agent: str = Field(
         description="Default agent used when none is specified.",
-        examples=["research-assistant"],
+        examples=["code-reviewer"],
     )
     default_model: AllModelEnum = Field(
         description="Default model used when none is specified.",

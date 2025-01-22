@@ -37,6 +37,16 @@ from service.utils import (
 warnings.filterwarnings("ignore", category=LangChainBetaWarning)
 logger = logging.getLogger(__name__)
 
+# Set the log level to INFO
+logger.setLevel(logging.INFO)
+
+# Add a handler (e.g., to console) if one doesn't already exist.  
+# This is crucial; otherwise, you won't see any log output.
+handler = logging.StreamHandler()  # Sends logs to the console
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 
 def verify_bearer(
     http_auth: Annotated[
@@ -44,6 +54,8 @@ def verify_bearer(
         Depends(HTTPBearer(description="Please provide AUTH_SECRET api key.", auto_error=False)),
     ],
 ) -> None:
+    logger.info(f"#> verify_bearer")
+
     if not settings.AUTH_SECRET:
         return
     auth_secret = settings.AUTH_SECRET.get_secret_value()
@@ -53,6 +65,9 @@ def verify_bearer(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+
+    logger.info(f"#> lifespan")
+
     # Construct agent with Sqlite checkpointer
     # TODO: It's probably dangerous to share the same checkpointer on multiple agents
     async with AsyncSqliteSaver.from_conn_string("checkpoints.db") as saver:
@@ -70,6 +85,7 @@ router = APIRouter(dependencies=[Depends(verify_bearer)])
 
 @router.get("/info")
 async def info() -> ServiceMetadata:
+    logger.info(f"#> /info")
     models = list(settings.AVAILABLE_MODELS)
     models.sort()
     return ServiceMetadata(
@@ -81,6 +97,7 @@ async def info() -> ServiceMetadata:
 
 
 def _parse_input(user_input: UserInput) -> tuple[dict[str, Any], UUID]:
+    logger.info(f"#> _parse_input")
     run_id = uuid4()
     thread_id = user_input.thread_id or str(uuid4())
 
@@ -113,6 +130,9 @@ async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMe
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to messages for recording feedback.
     """
+    logger.info(f"#> /invoke")
+    logger.info(f"#> agent: {agent_id}")
+    logger.info(f"#> user_input: {user_input}")
     agent: CompiledStateGraph = get_agent(agent_id)
     kwargs, run_id = _parse_input(user_input)
     try:
@@ -133,6 +153,10 @@ async def message_generator(
 
     This is the workhorse method for the /stream endpoint.
     """
+    logger.info(f"#> message_generator")
+    logger.info(f"#> agent: {agent_id}")
+    logger.info(f"#> user_input: {user_input}")
+
     agent: CompiledStateGraph = get_agent(agent_id)
     kwargs, run_id = _parse_input(user_input)
 
@@ -187,6 +211,7 @@ async def message_generator(
 
 
 def _sse_response_example() -> dict[int, Any]:
+    logger.info(f"#> _sse_response_example")
     return {
         status.HTTP_200_OK: {
             "description": "Server Sent Event Response",
@@ -214,6 +239,9 @@ async def stream(user_input: StreamInput, agent_id: str = DEFAULT_AGENT) -> Stre
 
     Set `stream_tokens=false` to return intermediate messages but not token-by-token.
     """
+    logger.info(f"#> /stream")
+    logger.info(f"#> agent: {agent_id}")
+    logger.info(f"#> user_input: {user_input}")
     return StreamingResponse(
         message_generator(user_input, agent_id),
         media_type="text/event-stream",
@@ -229,6 +257,7 @@ async def feedback(feedback: Feedback) -> FeedbackResponse:
     credentials can be stored and managed in the service rather than the client.
     See: https://api.smith.langchain.com/redoc#tag/feedback/operation/create_feedback_api_v1_feedback_post
     """
+    logger.info(f"#> /feedback")
     client = LangsmithClient()
     kwargs = feedback.kwargs or {}
     client.create_feedback(
@@ -245,6 +274,7 @@ def history(input: ChatHistoryInput) -> ChatHistory:
     """
     Get chat history.
     """
+    logger.info(f"#> /history")
     # TODO: Hard-coding DEFAULT_AGENT here is wonky
     agent: CompiledStateGraph = get_agent(DEFAULT_AGENT)
     try:
@@ -266,6 +296,7 @@ def history(input: ChatHistoryInput) -> ChatHistory:
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    logger.info(f"#> /health")
     return {"status": "ok"}
 
 
