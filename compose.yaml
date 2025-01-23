@@ -12,6 +12,9 @@ services:
         - path: src/agents/
           action: sync+restart
           target: /app/agents/
+        - path: src/db/
+          action: sync+restart
+          target: /app/db/
         - path: src/schema/
           action: sync+restart
           target: /app/schema/
@@ -42,6 +45,7 @@ services:
           target: /app/streamlit_app.py
 
   pgvector:
+    hostname: pgvector
     build:
       context: .
       dockerfile: docker/Dockerfile.pgvector

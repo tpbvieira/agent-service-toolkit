@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.messages import AnyMessage, HumanMessage
+from langchain_core.messages.utils import get_buffer_string
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph.state import CompiledStateGraph
@@ -18,6 +19,7 @@ from langsmith import Client as LangsmithClient
 
 from agents import DEFAULT_AGENT, get_agent, get_all_agent_info
 from core import settings
+from db.agent_model import DatabaseManager
 from schema import (
     ChatHistory,
     ChatHistoryInput,
@@ -164,6 +166,9 @@ async def analyze_code(user_input: UserInput) -> ChatMessage:
         response = await agent.ainvoke(**kwargs)
         output = langchain_to_chat_message(response["messages"][-1])
         output.run_id = str(run_id)
+
+        db_manager = DatabaseManager()
+        db_manager.add_record(code_snippet=user_input.message, suggestions=output.content)
         return output
     except Exception as e:
         logger.error(f"An exception occurred: {e}")
