@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 from collections.abc import AsyncGenerator, Generator
@@ -15,6 +16,17 @@ from schema import (
     UserInput,
 )
 
+logger = logging.getLogger(__name__)
+
+# Set the log level to INFO
+logger.setLevel(logging.INFO)
+
+# Add a handler (e.g., to console) if one doesn't already exist.  
+# This is crucial; otherwise, you won't see any log output.
+handler = logging.StreamHandler()  # Sends logs to the console
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 class AgentClientError(Exception):
     pass
@@ -113,6 +125,7 @@ class AgentClient:
             request.agent_config = agent_config
         async with httpx.AsyncClient() as client:
             try:
+                logger.info(request.model_dump())
                 response = await client.post(
                     f"{self.base_url}/{self.agent}/invoke",
                     json=request.model_dump(),

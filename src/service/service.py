@@ -145,6 +145,31 @@ async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMe
         raise HTTPException(status_code=500, detail="Unexpected error")
 
 
+@router.post("/analyze-code")
+async def analyze_code(user_input: UserInput) -> ChatMessage:
+    """
+    Invoke an agent with user input to retrieve a final response.
+
+    If agent_id is not provided, the default agent will be used.
+    Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
+    is also attached to messages for recording feedback.
+    """
+    logger.info(f"#> /analyze-code")
+    logger.info(f"#> user_input: {user_input}")
+    
+    agent_id = "code-reviewer"
+    agent: CompiledStateGraph = get_agent(agent_id)
+    kwargs, run_id = _parse_input(user_input)
+    try:
+        response = await agent.ainvoke(**kwargs)
+        output = langchain_to_chat_message(response["messages"][-1])
+        output.run_id = str(run_id)
+        return output
+    except Exception as e:
+        logger.error(f"An exception occurred: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error")
+
+
 async def message_generator(
     user_input: StreamInput, agent_id: str = DEFAULT_AGENT
 ) -> AsyncGenerator[str, None]:
