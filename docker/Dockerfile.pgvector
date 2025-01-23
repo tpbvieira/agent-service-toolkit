@@ -1,0 +1,17 @@
+FROM pgvector/pgvector:pg16
+
+RUN apt-get update && apt-get install -y cron tzdata gettext
+
+RUN echo "America/Sao_Paulo" > /etc/timezone \
+    && ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
+    && dpkg-reconfigure -f noninteractive tzdata
+
+COPY ./src/db/init_pgvector.sql /docker-entrypoint-initdb.d/init_pgvector.sql
+
+RUN \
+    cd /usr/local/bin && \
+    echo "#!/usr/bin/env bash" > pgvector-entrypoint.sh && \
+    echo "docker-entrypoint.sh postgres" >> pgvector-entrypoint.sh && \
+    chmod +x pgvector-entrypoint.sh
+
+EXPOSE 5432

@@ -40,3 +40,26 @@ services:
         - path: src/streamlit_app.py
           action: sync+restart
           target: /app/streamlit_app.py
+
+  pgvector:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pgvector
+    restart: always
+    environment:
+      POSTGRES_DB: agent_db
+      POSTGRES_USER: agent_db_user
+      POSTGRES_PASSWORD: 4g3ntdbus3r
+      POSTGRES_MAX_CONNECTIONS: 100
+      POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT: 360000
+      TZ: "America/Sao_Paulo"
+    ports:
+      - "5432:5432"
+    entrypoint: >
+      /bin/bash -c "
+      echo 'export POSTGRES_USER=${AGENT_PGVECTOR_USER}' > /etc/custom_env_agent.sh &&
+      echo 'export POSTGRES_PASSWORD=${AGENT_PGVECTOR_PWD}' >> /etc/custom_env_agent.sh &&
+      echo 'export POSTGRES_DB=${AGENT_PGVECTOR_DB}' >> /etc/custom_env_agent.sh &&
+      echo 'export TZ=America/Sao_Paulo' >> /etc/custom_env_agent.sh &&
+      chmod +x /etc/custom_env_agent.sh &&
+      pgvector-entrypoint.sh"
