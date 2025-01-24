@@ -6,6 +6,7 @@ from sqlalchemy import TIMESTAMP, Column, Integer, create_engine
 from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+# ToDo: deve ser levado para variáveis de ambiente
 AGENT_PGVECTOR_USER = "agent_db_user"
 AGENT_PGVECTOR_PWD = "4g3ntdbus3r"
 AGENT_PGVECTOR_HOST = "pgvector"

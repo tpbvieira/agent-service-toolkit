@@ -23,7 +23,7 @@ from schemas.task_data import TaskData, TaskDataStatus
 # The app heavily uses AgentClient to interact with the agent's FastAPI endpoints.
 
 
-APP_TITLE = "Agent Service Toolkit"
+APP_TITLE = "Agente de Otimização de Código"
 APP_ICON = "🧰"
 
 
