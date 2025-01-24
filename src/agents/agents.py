@@ -6,7 +6,7 @@ from agents.bg_task_agent.bg_task_agent import bg_task_agent
 from agents.chatbot import chatbot
 from agents.research_assistant import research_assistant
 from agents.code_reviewer import code_reviewer
-from schema import AgentInfo
+from schemas import AgentInfo
 
 DEFAULT_AGENT = "code-reviewer"
 

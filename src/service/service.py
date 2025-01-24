@@ -20,7 +20,7 @@ from langsmith import Client as LangsmithClient
 from agents import DEFAULT_AGENT, get_agent, get_all_agent_info
 from core import settings
 from db.agent_model import DatabaseManager
-from schema import (
+from schemas import (
     ChatHistory,
     ChatHistoryInput,
     ChatMessage,

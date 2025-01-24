@@ -15,9 +15,9 @@ services:
         - path: src/db/
           action: sync+restart
           target: /app/db/
-        - path: src/schema/
+        - path: src/schemas/
           action: sync+restart
-          target: /app/schema/
+          target: /app/schemas/
         - path: src/service/
           action: sync+restart
           target: /app/service/
@@ -37,9 +37,9 @@ services:
         - path: src/client/
           action: sync+restart
           target: /app/client/
-        - path: src/schema/
+        - path: src/schemas/
           action: sync+restart
-          target: /app/schema/
+          target: /app/schemas/
         - path: src/streamlit_app.py
           action: sync+restart
           target: /app/streamlit_app.py

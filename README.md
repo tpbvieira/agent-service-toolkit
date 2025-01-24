@@ -67,7 +67,7 @@ docker compose watch
 The repository is structured as follows:
 
 - `src/agents/`: Defines several agents with different capabilities
-- `src/schema/`: Defines the protocol schema
+- `src/schemas/`: Defines the protocol schema
 - `src/core/`: Core modules including LLM definition and settings
 - `src/service/service.py`: FastAPI service to serve the agents
 - `src/client/client.py`: Client to interact with the agent service

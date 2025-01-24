@@ -9,7 +9,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
 from core.settings import settings
-from schema.models import (
+from schemas.models import (
     AllModelEnum,
     AnthropicModelName,
     AWSModelName,

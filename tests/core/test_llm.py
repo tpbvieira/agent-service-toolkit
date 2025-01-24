@@ -8,7 +8,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
 from core.llm import get_model
-from schema.models import (
+from schemas.models import (
     AnthropicModelName,
     FakeModelName,
     GroqModelName,

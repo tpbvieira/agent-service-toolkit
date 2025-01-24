@@ -8,8 +8,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.pregel.types import StateSnapshot
 
 from agents.agents import Agent
-from schema import ChatHistory, ChatMessage, ServiceMetadata
-from schema.models import OpenAIModelName
+from schemas import ChatHistory, ChatMessage, ServiceMetadata
+from schemas.models import OpenAIModelName
 
 
 def test_invoke(test_client, mock_agent) -> None:
@@ -286,7 +286,7 @@ def test_info(test_client, mock_settings) -> None:
         assert response.status_code == 200
         output = ServiceMetadata.model_validate(response.json())
 
-    assert output.default_agent == "research-assistant"
+    assert output.default_agent == "code-reviewer"
     assert len(output.agents) == 1
     assert output.agents[0].key == "base-agent"
     assert output.agents[0].description == "A base agent."

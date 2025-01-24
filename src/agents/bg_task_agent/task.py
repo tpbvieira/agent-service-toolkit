@@ -5,7 +5,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.runnables import RunnableConfig
 
 from agents.utils import CustomData
-from schema.task_data import TaskData
+from schemas.task_data import TaskData
 
 
 class Task:

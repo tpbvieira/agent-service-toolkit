@@ -5,15 +5,15 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from client import AgentClientError
-from schema import ChatHistory, ChatMessage
-from schema.models import OpenAIModelName
+from schemas import ChatHistory, ChatMessage
+from schemas.models import OpenAIModelName
 
 
 def test_app_simple_non_streaming(mock_agent_client):
     """Test the full app - happy path"""
     at = AppTest.from_file("../../src/streamlit_app.py").run()
 
-    WELCOME_START = "Hello! I'm an AI-powered research assistant"
+    WELCOME_START = "Hello! I'm an AI-powered Python Code Reviewer. Give me some code to review!"
     PROMPT = "Know any jokes?"
     RESPONSE = "Sure! Here's a joke:"
 
@@ -103,8 +103,8 @@ def test_app_feedback(mock_agent_client):
 @pytest.mark.asyncio
 async def test_app_streaming(mock_agent_client):
     """Test the app with streaming enabled - including tool messages"""
-    at = AppTest.from_file("../../src/streamlit_app.py").run()
-
+    appTest = AppTest.from_file("../../src/streamlit_app.py").run()
+    
     # Setup mock streaming response
     PROMPT = "What is 6 * 7?"
     ai_with_tool = ChatMessage(
@@ -116,20 +116,20 @@ async def test_app_streaming(mock_agent_client):
     final_ai_message = ChatMessage(type="ai", content="The answer is 42")
 
     messages = [ai_with_tool, tool_message, final_ai_message]
-
+    print(messages)
     async def amessage_iter() -> AsyncGenerator[ChatMessage, None]:
         for m in messages:
             yield m
 
     mock_agent_client.astream = Mock(return_value=amessage_iter())
 
-    at.toggle[0].set_value(True)  # Use Streaming = True
-    at.chat_input[0].set_value(PROMPT).run()
-    print(at)
+    appTest.toggle[0].set_value(True)  # Use Streaming = True
+    appTest.chat_input[0].set_value(PROMPT).run()
+    print(appTest)
 
-    assert at.chat_message[0].avatar == "user"
-    assert at.chat_message[0].markdown[0].value == PROMPT
-    response = at.chat_message[1]
+    assert appTest.chat_message[0].avatar == "user"
+    assert appTest.chat_message[0].markdown[0].value == PROMPT
+    response = appTest.chat_message[1]
     tool_status = response.status[0]
     assert response.avatar == "assistant"
     assert tool_status.label == "Tool Call: calculator"
@@ -139,7 +139,7 @@ async def test_app_streaming(mock_agent_client):
     assert tool_status.markdown[1].value == "Output:"
     assert tool_status.markdown[2].value == "42"
     assert response.markdown[-1].value == "The answer is 42"
-    assert not at.exception
+    assert not appTest.exception
 
 
 @pytest.mark.asyncio

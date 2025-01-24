@@ -2,7 +2,7 @@ import asyncio
 
 from client import AgentClient
 from core import settings
-from schema import ChatMessage
+from schemas import ChatMessage
 
 
 async def amain() -> None:
