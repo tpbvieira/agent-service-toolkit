@@ -11,7 +11,6 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.messages import AnyMessage, HumanMessage
-from langchain_core.messages.utils import get_buffer_string
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph.state import CompiledStateGraph
@@ -56,7 +55,7 @@ def verify_bearer(
         Depends(HTTPBearer(description="Please provide AUTH_SECRET api key.", auto_error=False)),
     ],
 ) -> None:
-    logger.info(f"#> verify_bearer")
+    logger.info("#> verify_bearer")
 
     if not settings.AUTH_SECRET:
         return
@@ -68,7 +67,7 @@ def verify_bearer(
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
-    logger.info(f"#> lifespan")
+    logger.info("#> lifespan")
 
     # Construct agent with Sqlite checkpointer
     # TODO: It's probably dangerous to share the same checkpointer on multiple agents
@@ -87,7 +86,7 @@ router = APIRouter(dependencies=[Depends(verify_bearer)])
 
 @router.get("/info")
 async def info() -> ServiceMetadata:
-    logger.info(f"#> /info")
+    logger.info("#> /info")
     models = list(settings.AVAILABLE_MODELS)
     models.sort()
     return ServiceMetadata(
@@ -99,7 +98,7 @@ async def info() -> ServiceMetadata:
 
 
 def _parse_input(user_input: UserInput) -> tuple[dict[str, Any], UUID]:
-    logger.info(f"#> _parse_input")
+    logger.info("#> _parse_input")
     run_id = uuid4()
     thread_id = user_input.thread_id or str(uuid4())
 
@@ -132,9 +131,9 @@ async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMe
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to messages for recording feedback.
     """
-    logger.info(f"#> /invoke")
-    logger.info(f"#> agent: {agent_id}")
-    logger.info(f"#> user_input: {user_input}")
+    logger.info("#> /invoke")
+    logger.info("#> agent: %s", agent_id)
+    logger.info("#> user_input: %s", user_input)
     agent: CompiledStateGraph = get_agent(agent_id)
     kwargs, run_id = _parse_input(user_input)
     try:
@@ -143,7 +142,7 @@ async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMe
         output.run_id = str(run_id)
         return output
     except Exception as e:
-        logger.error(f"An exception occurred: {e}")
+        logger.error("An exception occurred: %s", e)
         raise HTTPException(status_code=500, detail="Unexpected error")
 
 
@@ -156,8 +155,8 @@ async def analyze_code(user_input: UserInput) -> ChatMessage:
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to messages for recording feedback.
     """
-    logger.info(f"#> /analyze-code")
-    logger.info(f"#> user_input: {user_input}")
+    logger.info("#> /analyze-code")
+    logger.info("#> user_input: %s", user_input)
     
     agent_id = "code-reviewer"
     agent: CompiledStateGraph = get_agent(agent_id)
@@ -171,7 +170,7 @@ async def analyze_code(user_input: UserInput) -> ChatMessage:
         db_manager.add_record(code_snippet=user_input.message, suggestions=output.content)
         return output
     except Exception as e:
-        logger.error(f"An exception occurred: {e}")
+        logger.error("An exception occurred: %s", e)
         raise HTTPException(status_code=500, detail="Unexpected error")
 
 
@@ -183,9 +182,9 @@ async def message_generator(
 
     This is the workhorse method for the /stream endpoint.
     """
-    logger.info(f"#> message_generator")
-    logger.info(f"#> agent: {agent_id}")
-    logger.info(f"#> user_input: {user_input}")
+    logger.info("#> message_generator")
+    logger.info("#> agent: %s", agent_id)
+    logger.info("#> user_input: %s", user_input)
 
     agent: CompiledStateGraph = get_agent(agent_id)
     kwargs, run_id = _parse_input(user_input)
@@ -215,7 +214,7 @@ async def message_generator(
                 chat_message = langchain_to_chat_message(message)
                 chat_message.run_id = str(run_id)
             except Exception as e:
-                logger.error(f"Error parsing message: {e}")
+                logger.error("Error parsing message: %s", e)
                 yield f"data: {json.dumps({'type': 'error', 'content': 'Unexpected error'})}\n\n"
                 continue
             # LangGraph re-sends the input message, which feels weird, so drop it
@@ -241,7 +240,7 @@ async def message_generator(
 
 
 def _sse_response_example() -> dict[int, Any]:
-    logger.info(f"#> _sse_response_example")
+    logger.info("#> _sse_response_example")
     return {
         status.HTTP_200_OK: {
             "description": "Server Sent Event Response",
@@ -269,9 +268,9 @@ async def stream(user_input: StreamInput, agent_id: str = DEFAULT_AGENT) -> Stre
 
     Set `stream_tokens=false` to return intermediate messages but not token-by-token.
     """
-    logger.info(f"#> /stream")
-    logger.info(f"#> agent: {agent_id}")
-    logger.info(f"#> user_input: {user_input}")
+    logger.info("#> /stream")
+    logger.info("#> agent: %s", agent_id)
+    logger.info("#> user_input: %s", user_input)
     return StreamingResponse(
         message_generator(user_input, agent_id),
         media_type="text/event-stream",
@@ -287,7 +286,7 @@ async def feedback(feedback: Feedback) -> FeedbackResponse:
     credentials can be stored and managed in the service rather than the client.
     See: https://api.smith.langchain.com/redoc#tag/feedback/operation/create_feedback_api_v1_feedback_post
     """
-    logger.info(f"#> /feedback")
+    logger.info("#> /feedback")
     client = LangsmithClient()
     kwargs = feedback.kwargs or {}
     client.create_feedback(
@@ -304,7 +303,7 @@ def history(input: ChatHistoryInput) -> ChatHistory:
     """
     Get chat history.
     """
-    logger.info(f"#> /history")
+    logger.info("#> /history")
     # TODO: Hard-coding DEFAULT_AGENT here is wonky
     agent: CompiledStateGraph = get_agent(DEFAULT_AGENT)
     try:
@@ -319,14 +318,14 @@ def history(input: ChatHistoryInput) -> ChatHistory:
         chat_messages: list[ChatMessage] = [langchain_to_chat_message(m) for m in messages]
         return ChatHistory(messages=chat_messages)
     except Exception as e:
-        logger.error(f"An exception occurred: {e}")
+        logger.error("An exception occurred: %s", e)
         raise HTTPException(status_code=500, detail="Unexpected error")
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    logger.info(f"#> /health")
+    logger.info("#> /health")
     return {"status": "ok"}
 
 

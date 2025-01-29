@@ -1,55 +1,77 @@
 import asyncio
 import json
-import requests
+import logging
 
-from requests.exceptions import RequestException
+import httpx
 from crewai.flow.flow import Flow, listen, start
+from requests.exceptions import RequestException
 
-class CodeReviewFlow(Flow):
+logger = logging.getLogger(__name__)
+
+# Set the log level to INFO
+logger.setLevel(logging.INFO)
+
+# Add a handler (e.g., to console) if one doesn't already exist.  
+# This is crucial; otherwise, you won't see any log output.
+handler = logging.StreamHandler()  # Sends logs to the console
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+class AsyncCodeReviewFlow(Flow):
+
+    def __init__(self):
+        super().__init__()
+        self.client = httpx.AsyncClient()
 
     @start()
-    def generate_code(self):
+    async def generate_code(self):
         headers = {"Content-Type": "application/json"}
         chatbot_url = "http://localhost:80/chatbot/invoke"
         chatbot_data = {"message": """write a naive python code to implemet merge sort in a inneficient way. 
                 your response shoud have only python code, without any comment or text before and after the code"""}
-
+        
+        chatbot_message = None
         try:
-            chatbot_response = requests.post(chatbot_url, headers=headers, json=chatbot_data, verify=False)  # 'verify=False' is equivalent to '--insecure'
+            chatbot_response = await self.client.post(url=chatbot_url, headers=headers, json=chatbot_data)
             response_json = chatbot_response.json()
             chatbot_message = response_json.get("content", "No content field found")
-            print("#> chatbot_message:", chatbot_message)
+            logger.info("#> chatbot_message: %s", chatbot_message)
         except RequestException as e:
-            print(f"#> HTTP Request Error: {e}")
-            return "Error, sorry!"
-        except json.JSONDecodeError:
-            print("#> Response is not in JSON format:", response_json.text)
-            return "Error, sorry!"
+            logger.error(e)
+        except json.JSONDecodeError as e:
+            logger.error(e)
 
         return chatbot_message
-
+    
     @listen(generate_code)
-    def create_review(self, chatbot_message):
+    async def create_review(self, code):
         headers = {"Content-Type": "application/json"}
         code_reviewer_url = "http://localhost:80/analyze-code"
-        code_reviewer_data = {"message": chatbot_message}
-        print("#> code_reviewer_data:", code_reviewer_data)
+        code_reviewer_data = {"message": code}
+        logger.info("#> code_reviewer_data: %s", code_reviewer_data)
 
+        code_reviewer_text = None
         try:
-            code_reviewer_response = requests.post(code_reviewer_url, headers=headers, json=code_reviewer_data, verify=False)  # 'verify=False' is equivalent to '--insecure'
-            print("#> code_reviewer_response:", code_reviewer_response.text)    
+            code_reviewer_response = await self.client.post(url=code_reviewer_url, headers=headers, json=code_reviewer_data)
+            code_reviewer_text = code_reviewer_response.text
+            logger.info("#> code_reviewer_response: %s", code_reviewer_response.text)
         except RequestException as e:
-            print(f"#> HTTP Request Error: {e}")
-            return "Error, sorry!"
-        except json.JSONDecodeError:
-            print(f"#> Invalid JSON response: {code_reviewer_response.text}")
-            return "Error, sorry!"
-        
-        return code_reviewer_response.text
+            logger.error(e)
+        except json.JSONDecodeError as e:
+            logger.error(e)
+
+        return code_reviewer_text
+    
+    async def kickoff(self):
+        async with self.client:
+            return await super().kickoff()
+
 
 async def main():
-    flow = CodeReviewFlow()
+    flow = AsyncCodeReviewFlow()
     result = await flow.kickoff()
-    print(f"#> Reviewed code: {result}")
+    logger.info("#> Reviewed code: %s", result)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
