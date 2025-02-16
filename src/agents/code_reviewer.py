@@ -1,13 +1,12 @@
 import logging
 import warnings
-
 from datetime import datetime
 from typing import Literal
 
 from langchain_community.tools import DuckDuckGoSearchResults, OpenWeatherMapQueryRun
 from langchain_community.utilities import OpenWeatherMapAPIWrapper
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core._api import LangChainBetaWarning
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig, RunnableLambda, RunnableSerializable
 from langgraph.checkpoint.memory import MemorySaver
@@ -54,7 +53,7 @@ if settings.OPENWEATHERMAP_API_KEY:
     tools.append(OpenWeatherMapQueryRun(name="Weather", api_wrapper=wrapper))
 
 current_date = datetime.now().strftime("%B %d, %Y")
-instructions = f"""
+instructions = """
         You are an experienced Python code reviewer that only answer prompts about python code.
         Your role is to suggest Python code optimizations that adhere to best practices 
         and established software development patterns.  

@@ -5,12 +5,11 @@ from datetime import datetime, timezone
 from sqlalchemy import TIMESTAMP, Column, Integer, create_engine
 from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.orm import declarative_base, sessionmaker
-
-# ToDo: deve ser levado para variáveis de ambiente
-AGENT_PGVECTOR_USER = "agent_db_user"
-AGENT_PGVECTOR_PWD = "4g3ntdbus3r"
-AGENT_PGVECTOR_HOST = "pgvector"
-AGENT_PGVECTOR_DB = "agent_db"
+\
+AGENT_PGVECTOR_USER = os.environ["PGVECTOR_USER"]
+AGENT_PGVECTOR_PWD = os.environ["PGVECTOR_PWD"]
+AGENT_PGVECTOR_HOST = os.environ["PGVECTOR_HOST"]
+AGENT_PGVECTOR_DB = os.environ["PGVECTOR_DB"]
 
 logging.basicConfig(level=logging.INFO)
 

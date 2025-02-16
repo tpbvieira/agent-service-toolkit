@@ -111,7 +111,7 @@ class AsyncCodeReviewFlow(Flow):
             logger.error("JSON decode error: %s", e)
 
         return code_reviewer_text
-    
+
     async def kickoff(self):
         """
         Initiates the asynchronous workflow by executing the flow.

@@ -1,0 +1,7 @@
+- use .env for postgres
+- new agent for rag and pgvector
+- how google api is obtained?
+- how web_search is called?
+- web_search is RAG
+- validar a forma de dados entregue via stream se é igual a giovani
+- - atualizar commits do repositorio original, principalmente ollama e postgres
