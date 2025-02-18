@@ -1,7 +1,17 @@
-- use .env for postgres
 - new agent for rag and pgvector
+https://python.langchain.com/docs/tutorials/qa_chat_history/#agents
+https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/#graph
+
 - how google api is obtained?
+    do get model, que inicializa com valores da variavel de ambiente, que nao pode ser modificada
 - how web_search is called?
+    - parece que o proprio langchain decide ao adicionar uma tool ao llm. necessário verificar como observar isto de forma 
+    expícita
+
+- implementar um connection pool, evitando iniciar modelos e banco d vezes
+
 - web_search is RAG
+
 - validar a forma de dados entregue via stream se é igual a giovani
-- - atualizar commits do repositorio original, principalmente ollama e postgres
+
+- atualizar commits do repositorio original, principalmente ollama e postgres

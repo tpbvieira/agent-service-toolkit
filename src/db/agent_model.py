@@ -1,15 +1,13 @@
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from langchain_postgres import PGVector
 from sqlalchemy import TIMESTAMP, Column, Integer, create_engine
 from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.orm import declarative_base, sessionmaker
-\
-AGENT_PGVECTOR_USER = os.environ["PGVECTOR_USER"]
-AGENT_PGVECTOR_PWD = os.environ["PGVECTOR_PWD"]
-AGENT_PGVECTOR_HOST = os.environ["PGVECTOR_HOST"]
-AGENT_PGVECTOR_DB = os.environ["PGVECTOR_DB"]
+
+from core.embedding import get_embedding_model
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,10 +26,17 @@ class AnalysisHistory(Base):
 class DatabaseManager:
 
     def __init__(self) -> None:
-        db_url = f"postgresql+psycopg2://{AGENT_PGVECTOR_USER}:{AGENT_PGVECTOR_PWD}@{AGENT_PGVECTOR_HOST}/{AGENT_PGVECTOR_DB}"
-        self.engine = create_engine(db_url)
+
+        AGENT_PGVECTOR_USER = os.environ["AGENT_PGVECTOR_USER"]
+        AGENT_PGVECTOR_PWD = os.environ["AGENT_PGVECTOR_PWD"]
+        AGENT_PGVECTOR_HOST = os.environ["AGENT_PGVECTOR_HOST"]
+        AGENT_PGVECTOR_DB = os.environ["AGENT_PGVECTOR_DB"]
+
+        self.db_url = f"postgresql+psycopg://{AGENT_PGVECTOR_USER}:{AGENT_PGVECTOR_PWD}@{AGENT_PGVECTOR_HOST}/{AGENT_PGVECTOR_DB}"
+        self.engine = create_engine(self.db_url)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
+
 
     def add_record(self, code_snippet: str, suggestions: str) -> None:
         session = self.Session()
@@ -39,10 +44,23 @@ class DatabaseManager:
         new_record = AnalysisHistory(
             code_snippet=code_snippet,
             suggestions=suggestions,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
 
         session.add(new_record)
         session.commit()
         session.close()
 
+
+    def get_db_url(self) -> str:
+        return self.db_url
+    
+
+    def get_vector_store(self, collection_name: str) -> PGVector:
+        google_embeddings = get_embedding_model()
+        return PGVector(
+            embeddings=google_embeddings,
+            collection_name= collection_name,
+            connection=DatabaseManager().get_db_url(),
+            use_jsonb=True,
+        )
