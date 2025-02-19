@@ -41,18 +41,13 @@ class AgentState(MessagesState, total=False):
 
 
 current_date = datetime.now().strftime("%B %d, %Y")
-instructions = f"""
-    You are a helpful assistant with the ability to search the web.
+base_system_prompt = f"""
+    You are a helpful assistant with the ability to retrieve information from tools, if you 
+    decide that is necessary to provide a good answer.
     Today's date is {current_date}.
-
-    NOTE: THE USER CAN'T SEE THE TOOL RESPONSE.
-
-    A few things to remember:
-    - Please include markdown-formatted links to any citations used in your response. Only include one
-    or two citations per response unless more are needed. ONLY USE LINKS RETURNED BY THE TOOLS.
     """
 
-web_search = DuckDuckGoSearchResults(name="WebSearch")
+# web_search = DuckDuckGoSearchResults(name="WebSearch")
 
 @tool(response_format="content_and_artifact")
 def retrieve(query: str):
@@ -69,24 +64,25 @@ def retrieve(query: str):
 # tools_list = [web_search, retrieve]
 tools_list = [retrieve]
 
+
 def wrap_model(model: BaseChatModel) -> RunnableSerializable[AgentState, AIMessage]:
     logger.info("#> wrap_model")
     preprocessor = RunnableLambda(
-        lambda state: [SystemMessage(content=instructions)] + state["messages"],
+        lambda state: [SystemMessage(content=base_system_prompt)] + state["messages"],
         name="StateModifier",
     )
     model = model.bind_tools(tools_list)
 
     return preprocessor | model
 
+
 # Step 1: Generate an AIMessage that may include a tool-call to be sent.
-async def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState:
+def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState:
     """Generate tool call for retrieval or respond."""
     logger.info("#> query_or_respond")
     model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-    model_runnable = wrap_model(model)
-    response = await model_runnable.ainvoke(state, config)
-
+    model_with_tools = wrap_model(model)
+    response = model_with_tools.invoke(state, config)
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
@@ -96,7 +92,7 @@ tools = ToolNode(tools_list)
 
 
 # Step 3: Generate a response using the retrieved content.
-async def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
+def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
     """Generate answer."""
     logger.info("#> generate")
     # Get generated ToolMessages
@@ -110,39 +106,36 @@ async def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
 
     # Format into prompt
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
-    system_message_content = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
-        "answer concise."
-        "\n\n"
-        f"{docs_content}"
-    )
+    system_prompt = f"""
+        Use the following pieces of retrieved context to answer the question. 
+        If you don't know the answer, say that you don't know. 
+        Use three sentences maximum and keep the answer concise.
+        retrieved context: 
+        \n\n
+        {docs_content}"""
     conversation_messages = [
         message
         for message in state["messages"]
         if message.type in ("human", "system")
         or (message.type == "ai" and not message.tool_calls)
     ]
-    prompt = [SystemMessage(system_message_content)] + conversation_messages
-
+    rag_prompt = [SystemMessage(base_system_prompt + system_prompt)] + conversation_messages
+    logger.info("#> generate > rag_prompt: %s", rag_prompt)
     # Run
-    model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-    model_runnable = wrap_model(model)
-    response = await model_runnable.ainvoke(prompt)
+    llm = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
+    response = llm.invoke(rag_prompt, config)
     return {"messages": [response]}
 
 
-# After "model", if there are tool calls, run "tools". Otherwise END.
-def pending_tool_calls(state: AgentState) -> Literal["tools", "done"]:
-    logger.info("#> pending_tool_calls")
-    last_message = state["messages"][-1]
-    if not isinstance(last_message, AIMessage):
-        raise TypeError(f"Expected AIMessage, got {type(last_message)}")
-    if last_message.tool_calls:
-        return "tools"
-    return "done"
+# # After "model", if there are tool calls, run "tools". Otherwise END.
+# def pending_tool_calls(state: AgentState) -> Literal["tools", "done"]:
+#     logger.info("#> pending_tool_calls")
+#     last_message = state["messages"][-1]
+#     if not isinstance(last_message, AIMessage):
+#         raise TypeError(f"Expected AIMessage, got {type(last_message)}")
+#     if last_message.tool_calls:
+#         return "tools"
+#     return "done"
 
 
 # Load and chunk contents of the blog
@@ -184,14 +177,22 @@ graph_builder = StateGraph(MessagesState)
 graph_builder.add_node(query_or_respond)
 graph_builder.add_node(tools)
 graph_builder.add_node(generate)
-
-graph_builder.set_entry_point("query_or_respond")
 graph_builder.add_conditional_edges(
     "query_or_respond",
     tools_condition,
     {END: END, "tools": "tools"},
 )
+
+graph_builder.set_entry_point("query_or_respond")
 graph_builder.add_edge("tools", "generate")
 graph_builder.add_edge("generate", END)
 
 rag = graph_builder.compile(checkpointer=MemorySaver())
+
+# Get the PNG image binary data
+png = rag.get_graph().draw_mermaid_png()
+
+# Save the binary PNG data to a file in /tmp
+file_path = "/app/graph.png"
+with open(file_path, "wb") as f:
+    f.write(png)

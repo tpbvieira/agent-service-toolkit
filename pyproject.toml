@@ -43,6 +43,7 @@ dependencies = [
     "langchain-postgres>=0.0.13",
     "beautifulsoup4>=4.13.3",
     "psycopg-binary>=3.2.4",
+    "ipython>=8.32.0",
 ]
 
 [dependency-groups]
