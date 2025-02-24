@@ -42,10 +42,9 @@ class GoogleModelName(StrEnum):
 class GroqModelName(StrEnum):
     """https://console.groq.com/docs/models"""
 
-    LLAMA_31_8B = "groq-llama-3.1-8b"
-    LLAMA_33_70B = "groq-llama-3.3-70b"
-
-    LLAMA_GUARD_3_8B = "groq-llama-guard-3-8b"
+    LLAMA_31_8B = "groq-llama-3.1-8b"   # 128k tokens
+    LLAMA_33_70B = "groq-llama-3.3-70b" # 128k tokens
+    LLAMA_GUARD_3_8B = "groq-llama-guard-3-8b" # 8,192 tokens
 
 
 class AWSModelName(StrEnum):

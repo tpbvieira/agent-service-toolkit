@@ -9,7 +9,7 @@ from agents.rag import rag
 from agents.research_assistant import research_assistant
 from schemas import AgentInfo
 
-DEFAULT_AGENT = "code-reviewer"
+DEFAULT_AGENT = "rag"
 
 
 @dataclass

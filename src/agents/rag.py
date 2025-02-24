@@ -42,9 +42,9 @@ class AgentState(MessagesState, total=False):
 
 current_date = datetime.now().strftime("%B %d, %Y")
 base_system_prompt = f"""
-    You are a helpful assistant with the ability to retrieve information from tools, if you 
-    decide that is necessary to provide a good answer.
-    Today's date is {current_date}.
+    Você é um assistente prestativo, com habilidade para recuperar informações de ferramentas,
+    se você decidir que é necessário para fornecer uma boa resposta.
+    A data de hoje é {current_date}.
     """
 
 # web_search = DuckDuckGoSearchResults(name="WebSearch")
@@ -107,10 +107,10 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
     # Format into prompt
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
     system_prompt = f"""
-        Use the following pieces of retrieved context to answer the question. 
-        If you don't know the answer, say that you don't know. 
-        Use three sentences maximum and keep the answer concise.
-        retrieved context: 
+        Use as seguintes partes do contexto recuperado para responder à pergunta.
+        Se você não souber a resposta, diga que não sabe.
+        Use no máximo três frases e mantenha a resposta concisa.
+        Partes do contexto recuperado:
         \n\n
         {docs_content}"""
     conversation_messages = [
@@ -140,21 +140,25 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
 
 # Load and chunk contents of the blog
 logger.info("#> WebBaseLoader")
-loader = WebBaseLoader(
-    web_paths=("https://lilianweng.github.io/posts/2023-06-23-agent/",),
-    bs_kwargs=dict(
-        parse_only=bs4.SoupStrainer(
-            class_=("post-content", "post-title", "post-header")
-        )
-    ),
+urls = [
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1965-resolucao-767", # cyber
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2020/1497-resolucao-740", # cyber
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1990-resolucao-771", # sei
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2017/943-resolucao-682", # sei
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765" # rgc
+]
+
+logger.info("#> WebBaseLoader > loading...")
+docs = [WebBaseLoader(url).load() for url in urls]
+docs_list = [item for sublist in docs for item in sublist]
+text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=256, chunk_overlap=64
 )
-docs = loader.load()
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-all_splits = text_splitter.split_documents(docs)
+doc_splits = text_splitter.split_documents(docs_list)
 vector_store = DatabaseManager().get_vector_store("resolucoes_embd")
 # Index chunks
-_ = vector_store.add_documents(documents=all_splits)
-
+_ = vector_store.add_documents(documents=doc_splits)
+logger.info("#> WebBaseLoader > loaded and indexed")
 
 # # Define the graph
 # agent = StateGraph(AgentState)

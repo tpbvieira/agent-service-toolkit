@@ -1,14 +1,9 @@
 Tasks
-- new agent for rag and pgvector
-https://python.langchain.com/docs/tutorials/qa_chat_history/#agents
-https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/#graph
-- web_search and RAG
-- use pgvector as a well defined table with metadata
-- async post ainvoke and asyncpg
-- db connection pool
-- validar a forma de dados entregue via stream se é igual a giovani
-- atualizar commits do repositorio original, principalmente ollama e postgres
-
+- new agent for rag and pgvector [OK]
+    https://python.langchain.com/docs/tutorials/qa_chat_history/#agents
+    https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/#graph
+- do react and crag by simple agent?
+    https://python.langchain.com/docs/tutorials/qa_chat_history/#agents
 questions
 - how google api is obtained?
     do get model, que inicializa com valores da variavel de ambiente, que nao pode ser modificada
