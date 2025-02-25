@@ -11,3 +11,5 @@ questions
     - parece que o proprio langchain decide ao adicionar uma tool ao llm. necessário verificar como observar isto de forma 
     expícita
 
+
+teste
