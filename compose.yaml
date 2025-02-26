@@ -2,7 +2,9 @@ services:
   agent_service:
     build:
       context: .
+      network: host  # Use the host 
       dockerfile: docker/Dockerfile.service
+      
     ports:
       - "80:80"
     env_file:
@@ -21,11 +23,14 @@ services:
         - path: src/service/
           action: sync+restart
           target: /app/service/
+    networks:
+      - network1  # Uses the specified network at runtime
 
   streamlit_app:
     build:
       context: .
       dockerfile: docker/Dockerfile.app
+      network: host  # Use the host 
     ports:
       - "8501:8501"
     depends_on:
@@ -43,12 +48,15 @@ services:
         - path: src/streamlit_app.py
           action: sync+restart
           target: /app/streamlit_app.py
+    networks:
+      - network1  # Uses the specified network at runtime
 
-  pgvector:
+  pgvectors:
     hostname: pgvector
     build:
       context: .
       dockerfile: docker/Dockerfile.pgvector
+      network: host  # Use the host 
     restart: always
     environment:
       POSTGRES_DB: agent_db
@@ -67,3 +75,10 @@ services:
       echo 'export TZ=America/Sao_Paulo' >> /etc/custom_env_agent.sh &&
       chmod +x /etc/custom_env_agent.sh &&
       pgvector-entrypoint.sh"
+    networks:
+      - network1  # Uses the specified network at runtime
+
+networks:
+  network1:
+    name: docker-host-bridge
+    external: true
