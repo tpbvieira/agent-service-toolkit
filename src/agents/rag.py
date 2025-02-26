@@ -82,9 +82,12 @@ def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState
     logger.info("#> query_or_respond")
     model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
     model_with_tools = wrap_model(model)
-    response = model_with_tools.invoke(state, config)
-    # We return a list, because this will get added to the existing list
-    return {"messages": [response]}
+    try:
+        response = model_with_tools.invoke(state, config)
+    except Exception as e:
+        logger.error("#> query_or_respond > error: %s", e)
+        response = "Unexpected error."
+    return {"messages": []}
 
 
 # Step 2: Execute the retrieval.
@@ -141,11 +144,11 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
 # Load and chunk contents of the blog
 logger.info("#> WebBaseLoader")
 urls = [
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1965-resolucao-767", # cyber
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2020/1497-resolucao-740", # cyber
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1990-resolucao-771", # sei
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2017/943-resolucao-682", # sei
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765" # rgc
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1965-resolucao-767",  # cyber
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2020/1497-resolucao-740",  # cyber
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1990-resolucao-771",  # sei
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2017/943-resolucao-682",   # sei
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765"   # rgc
 ]
 
 logger.info("#> WebBaseLoader > loading...")
