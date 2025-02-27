@@ -51,7 +51,7 @@ services:
     networks:
       - network1  # Uses the specified network at runtime
 
-  pgvectors:
+  pgvector:
     hostname: pgvector
     build:
       context: .
