@@ -87,7 +87,7 @@ def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState
     except Exception as e:
         logger.error("#> query_or_respond > error: %s", e)
         response = "Unexpected error."
-    return {"messages": []}
+    return {"messages": [response]}
 
 
 # Step 2: Execute the retrieval.
