@@ -90,7 +90,7 @@ def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState
         response = model_with_tools.invoke(state, config)
     except (AgentClientError) as e:
         logger.error("#> query_or_respond > error: %s", e)
-        raise
+        response = AIMessage(content="Unexpected error, sorry! Please try again latter.")
     return {"messages": [response]}
 
 

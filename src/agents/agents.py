@@ -5,6 +5,7 @@ from langgraph.graph.state import CompiledStateGraph
 from agents.bg_task_agent.bg_task_agent import bg_task_agent
 from agents.chatbot import chatbot
 from agents.code_reviewer import code_reviewer
+from agents.command_agent import command_agent
 from agents.rag import rag
 from agents.research_assistant import research_assistant
 from schemas import AgentInfo
@@ -19,6 +20,7 @@ class Agent:
 
 
 agents: dict[str, Agent] = {
+    "command-agent": Agent(description="A command agent.", graph=command_agent),
     "bg-task-agent": Agent(description="A background task agent.", graph=bg_task_agent),
     "code-reviewer": Agent(description="A Pytho Code Reviewer.", graph=code_reviewer),
     "chatbot": Agent(description="A simple chatbot.", graph=chatbot),
