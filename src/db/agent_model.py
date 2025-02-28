@@ -9,7 +9,18 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from core.embedding import get_embedding_model
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+# Set the log level to INFO
+logger.setLevel(logging.INFO)
+# Prevent duplicate logs
+logger.propagate = False  
+# Check if the logger already has handlers to prevent duplicate entries
+if not logger.handlers:
+    # Add a handler (e.g., to console) if one doesn't already exist.
+    handler = logging.StreamHandler()  # Sends logs to the console
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 Base = declarative_base()
 

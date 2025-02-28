@@ -18,16 +18,17 @@ from schemas import (
 )
 
 logger = logging.getLogger(__name__)
-
 # Set the log level to INFO
 logger.setLevel(logging.INFO)
-
-# Add a handler (e.g., to console) if one doesn't already exist.  
-# This is crucial; otherwise, you won't see any log output.
-handler = logging.StreamHandler()  # Sends logs to the console
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+# Prevent duplicate logs
+logger.propagate = False  
+# Check if the logger already has handlers to prevent duplicate entries
+if not logger.handlers:
+    # Add a handler (e.g., to console) if one doesn't already exist.
+    handler = logging.StreamHandler()  # Sends logs to the console
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 
 class AgentClientError(Exception):
