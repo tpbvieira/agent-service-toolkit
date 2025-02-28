@@ -72,6 +72,6 @@ class DatabaseManager:
         return PGVector(
             embeddings=google_embeddings,
             collection_name= collection_name,
-            connection=DatabaseManager().get_db_url(),
+            connection=self.get_db_url(),
             use_jsonb=True,
         )

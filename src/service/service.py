@@ -145,7 +145,7 @@ async def invoke(user_input: UserInput, agent_id: str = DEFAULT_AGENT) -> ChatMe
         return output
     except Exception as e:
         logger.error("An exception occurred: %s", e)
-        raise HTTPException(status_code=500, detail="Unexpected error")
+        raise HTTPException(status_code=500, detail="Unexpected error") from e
 
 
 @router.post("/analyze-code")
@@ -173,7 +173,7 @@ async def analyze_code(user_input: UserInput) -> ChatMessage:
         return output
     except Exception as e:
         logger.error("An exception occurred: %s", e)
-        raise HTTPException(status_code=500, detail="Unexpected error")
+        raise HTTPException(status_code=500, detail="Unexpected error") from e
 
 
 async def message_generator(
@@ -321,7 +321,7 @@ def history(input: ChatHistoryInput) -> ChatHistory:
         return ChatHistory(messages=chat_messages)
     except Exception as e:
         logger.error("An exception occurred: %s", e)
-        raise HTTPException(status_code=500, detail="Unexpected error")
+        raise HTTPException(status_code=500, detail="Unexpected error") from e
 
 
 @app.get("/health")

@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import warnings
 from datetime import datetime
@@ -87,9 +88,9 @@ def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState
     model_with_tools = wrap_model(model)
     try:
         response = model_with_tools.invoke(state, config)
-    except (AgentClientError, Exception) as e:
+    except (AgentClientError) as e:
         logger.error("#> query_or_respond > error: %s", e)
-        response = "Unexpected error."
+        raise
     return {"messages": [response]}
 
 
@@ -147,24 +148,44 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
 # Load and chunk contents of the blog
 logger.info("#> WebBaseLoader")
 urls = [
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1965-resolucao-767",  # cyber
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2020/1497-resolucao-740",  # cyber
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1990-resolucao-771",  # sei
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2017/943-resolucao-682",   # sei
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765"   # rgc
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2020/1497-resolucao-740",  # cyber 1
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1965-resolucao-767",  # cyber 2
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2017/943-resolucao-682",   # sei 1
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1990-resolucao-771",  # sei 2
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765"   # rgc 1
 ]
 
-logger.info("#> WebBaseLoader > loading...")
+logger.info("#> WebBaseLoader > loading vector database of resolucoes...")
 docs = [WebBaseLoader(url).load() for url in urls]
 docs_list = [item for sublist in docs for item in sublist]
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     chunk_size=256, chunk_overlap=64
 )
+
 doc_splits = text_splitter.split_documents(docs_list)
-vector_store = DatabaseManager().get_vector_store("resolucoes_embd")
+
+def generate_doc_id(doc):
+    """Generate a unique ID based on document content."""
+    return hashlib.sha256(doc.page_content.encode()).hexdigest()  # Hash content as ID
+
+# Generate document IDs
+doc_id_map = {}
+unique_docs = []
+
+for doc in doc_splits:
+    doc_id = generate_doc_id(doc)
+    if doc_id not in doc_id_map:
+        doc_id_map[doc_id] = doc
+        unique_docs.append(doc)
+
+# Get unique IDs and documents
+unique_doc_ids = list(doc_id_map.keys())
+unique_doc_splits = list(doc_id_map.values())
+
 # Index chunks
-_ = vector_store.add_documents(documents=doc_splits)
-logger.info("#> WebBaseLoader > loaded and indexed")
+vector_store = DatabaseManager().get_vector_store("resolucoes_embd")
+indexed = vector_store.add_documents(documents=unique_doc_splits, ids=unique_doc_ids)
+logger.info("#> WebBaseLoader > Indexed %s chunks", len(indexed))
 
 # # Define the graph
 # agent = StateGraph(AgentState)

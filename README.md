@@ -15,7 +15,7 @@ This project offers a template for you to easily build and run your own agents u
 
 ### [Try the app!](https://agent-service-toolkit.streamlit.app/)
 
-`<a href="https://agent-service-toolkit.streamlit.app/"><img src="media/app_screenshot.png" width="600">``</a>`
+<a href="https://agent-service-toolkit.streamlit.app/"><img src="media/app_screenshot.png" width="600"></a>
 
 ### Quickstart
 
@@ -51,16 +51,16 @@ docker compose watch
 ### Key Features
 
 1. **LangGraph Agent**: A customizable agent built using the LangGraph framework.
-2. **FastAPI Service**: Serves the agent with both streaming and non-streaming endpoints.
-3. **Advanced Streaming**: A novel approach to support both token-based and message-based streaming.
-4. **Content Moderation**: Implements LlamaGuard for content moderation (requires Groq API key).
-5. **Streamlit Interface**: Provides a user-friendly chat interface for interacting with the agent.
-6. **Multiple Agent Support**: Run multiple agents in the service and call by URL path
-7. **Asynchronous Design**: Utilizes async/await for efficient handling of concurrent requests.
-8. **Feedback Mechanism**: Includes a star-based feedback system integrated with LangSmith.
-9. **Dynamic Metadata**: `/info` endpoint provides dynamically configured metadata about the service and available agents and models.
-10. **Docker Support**: Includes Dockerfiles and a docker compose file for easy development and deployment.
-11. **Testing**: Includes robust unit and integration tests for the full repo.
+1. **FastAPI Service**: Serves the agent with both streaming and non-streaming endpoints.
+1. **Advanced Streaming**: A novel approach to support both token-based and message-based streaming.
+1. **Content Moderation**: Implements LlamaGuard for content moderation (requires Groq API key).
+1. **Streamlit Interface**: Provides a user-friendly chat interface for interacting with the agent.
+1. **Multiple Agent Support**: Run multiple agents in the service and call by URL path
+1. **Asynchronous Design**: Utilizes async/await for efficient handling of concurrent requests.
+1. **Feedback Mechanism**: Includes a star-based feedback system integrated with LangSmith.
+1. **Dynamic Metadata**: `/info` endpoint provides dynamically configured metadata about the service and available agents and models.
+1. **Docker Support**: Includes Dockerfiles and a docker compose file for easy development and deployment.
+1. **Testing**: Includes robust unit and integration tests for the full repo.
 
 ### Key Files
 
@@ -82,8 +82,10 @@ The repository is structured as follows:
    git clone https://github.com/JoshuaC215/agent-service-toolkit.git
    cd agent-service-toolkit
    ```
+
 2. Set up environment variables:
    Create a `.env` file in the root directory. At least one LLM API key or configuration is required. See the [`.env.example` file](./.env.example) for a full list of available environment variables, including a variety of model provider API keys, header-based authentication, LangSmith tracing, testing and development modes, and OpenWeatherMap API key.
+
 3. You can now run the agent service and the Streamlit app locally, either with Docker or just using Python. The Docker setup is recommended for simpler environment setup and immediate reloading of the services when you make changes to your code.
 
 ### Building or customizing your own agent
@@ -91,8 +93,8 @@ The repository is structured as follows:
 To customize the agent for your own use case:
 
 1. Add your new agent to the `src/agents` directory. You can copy `research_assistant.py` or `chatbot.py` and modify it to change the agent's behavior and tools.
-2. Import and add your new agent to the `agents` dictionary in `src/agents/agents.py`. Your agent can be called by `/<your_agent_name>/invoke` or `/<your_agent_name>/stream`.
-3. Adjust the Streamlit interface in `src/streamlit_app.py` to match your agent's capabilities.
+1. Import and add your new agent to the `agents` dictionary in `src/agents/agents.py`. Your agent can be called by `/<your_agent_name>/invoke` or `/<your_agent_name>/stream`.
+1. Adjust the Streamlit interface in `src/streamlit_app.py` to match your agent's capabilities.
 
 ### Docker Setup
 
@@ -101,17 +103,21 @@ This project includes a Docker setup for easy development and deployment. The `c
 For local development, we recommend using [docker compose watch](https://docs.docker.com/compose/file-watch/). This feature allows for a smoother development experience by automatically updating your containers when changes are detected in your source code.
 
 1. Make sure you have Docker and Docker Compose (>=[2.23.0](https://docs.docker.com/compose/release-notes/#2230)) installed on your system.
+
 2. Build and launch the services in watch mode:
 
    ```sh
    docker compose watch
    ```
-3. The services will now automatically update when you make changes to your code:
 
+3. The services will now automatically update when you make changes to your code:
    - Changes in the relevant python files and directories will trigger updates for the relevantservices.
    - NOTE: If you make changes to the `pyproject.toml` or `uv.lock` files, you will need to rebuild the services by running `docker compose up --build`.
+
 4. Access the Streamlit app by navigating to `http://localhost:8501` in your web browser.
+
 5. The agent service API will be available at `http://0.0.0.0:8080`. You can also use the OpenAPI docs at `http://0.0.0.0:8080/redoc`.
+
 6. Use `docker compose down` to stop the services.
 
 This setup allows you to develop and test your changes in real-time without manually restarting the services.
@@ -148,15 +154,15 @@ You can simply install LangGraph Studio, add your `.env` file to the root direct
 You can also use [Ollama](https://ollama.com) to run the LLM powering the agent service.
 
 1. Install Ollama using instructions from https://github.com/ollama/ollama
-2. Install any model you want to use, e.g. `ollama pull llama3.2` and set the `OLLAMA_MODEL` environment variable to the model you want to use, e.g. `OLLAMA_MODEL=llama3.2`
+1. Install any model you want to use, e.g. `ollama pull llama3.2` and set the `OLLAMA_MODEL` environment variable to the model you want to use, e.g. `OLLAMA_MODEL=llama3.2`
 
 If you are running the service locally (e.g. `python src/run_service.py`), you should be all set!
 
 If you are running the service in Docker, you will also need to:
 
 1. [Configure the Ollama server as described here](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-configure-ollama-server), e.g. by running `launchctl setenv OLLAMA_HOST "0.0.0.0"` on MacOS and restart Ollama.
-2. Set the `OLLAMA_BASE_URL` environment variable to the base URL of the Ollama server, e.g. `OLLAMA_BASE_URL=http://host.docker.internal:11434`
-3. Alternatively, you can run `ollama/ollama` image in Docker and use a similar configuration (however it may be slower in some cases).
+1. Set the `OLLAMA_BASE_URL` environment variable to the base URL of the Ollama server, e.g. `OLLAMA_BASE_URL=http://host.docker.internal:11434`
+1. Alternatively, you can run `ollama/ollama` image in Docker and use a similar configuration (however it may be slower in some cases).
 
 ### Local development without Docker
 
@@ -169,16 +175,19 @@ You can also run the agent service and the Streamlit app locally without Docker,
    uv sync --frozen
    source .venv/bin/activate
    ```
+
 2. Run the FastAPI server:
 
    ```sh
    python src/run_service.py
    ```
+
 3. In a separate terminal, run the Streamlit app:
 
    ```sh
    streamlit run src/streamlit_app.py
    ```
+
 4. Open your browser and navigate to the URL provided by Streamlit (usually `http://localhost:8501`).
 
 ## Projects built with or inspired by agent-service-toolkit
@@ -194,6 +203,7 @@ The following are a few of the public projects that drew code or inspiration fro
 Contributions are welcome! Please feel free to submit a Pull Request. Currently the tests need to be run using the local development without Docker setup. To run the tests for the agent service:
 
 1. Ensure you're in the project root directory and have activated your virtual environment.
+
 2. Install the development dependencies and pre-commit hooks:
 
    ```sh
@@ -201,6 +211,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. Currently 
    uv sync --frozen
    pre-commit install
    ```
+
 3. Run the tests using pytest:
 
    ```sh
