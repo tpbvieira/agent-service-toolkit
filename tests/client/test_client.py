@@ -23,7 +23,7 @@ def test_init(mock_env):
         timeout=30.0,
         get_info=False,
     )
-    assert client.base_url == "http://test"
+    assert client.base_url == "http://0.0.0.0"
     assert client.timeout == 30.0
     client.update_agent("test-agent", verify=False)
     assert client.agent == "test-agent"
