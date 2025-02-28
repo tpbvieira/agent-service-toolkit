@@ -16,6 +16,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
+from client.client import AgentClientError
+
 from core import get_model, settings
 from db.agent_model import DatabaseManager
 
@@ -84,7 +86,7 @@ def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState
     model_with_tools = wrap_model(model)
     try:
         response = model_with_tools.invoke(state, config)
-    except Exception as e:
+    except (AgentClientError, Exception) as e:
         logger.error("#> query_or_respond > error: %s", e)
         response = "Unexpected error."
     return {"messages": [response]}

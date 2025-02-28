@@ -10,6 +10,6 @@ questions
 - how web_search is called?
     - parece que o proprio langchain decide ao adicionar uma tool ao llm. necessário verificar como observar isto de forma 
     expícita
-
+- em que camada devemos logar as exceptionsdoc
 
 teste

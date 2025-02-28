@@ -1,6 +1,7 @@
-import logging
 import json
+import logging
 import os
+import time
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
@@ -28,7 +29,12 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 class AgentClientError(Exception):
+    pass
+
+
+class AgentClientContextSizeError(Exception):
     pass
 
 
@@ -41,6 +47,7 @@ class AgentClient:
         agent: str = None,
         timeout: float | None = None,
         get_info: bool = True,
+        max_retries: int = 2,
     ) -> None:
         """
         Initialize the client.
@@ -51,6 +58,8 @@ class AgentClient:
             timeout (float, optional): The timeout for requests.
             get_info (bool, optional): Whether to fetch agent information on init.
                 Default: True
+            max_retries (int, optional): The maximum number of retries for requests.
+                Default: 2
         """
         self.base_url = base_url
         self.auth_secret = os.getenv("AUTH_SECRET")
@@ -61,6 +70,7 @@ class AgentClient:
             self.retrieve_info()
         if agent:
             self.update_agent(agent)
+        self.max_retries = max_retries
 
     @property
     def _headers(self) -> dict[str, str]:
@@ -78,7 +88,8 @@ class AgentClient:
             )
             response.raise_for_status()
         except httpx.HTTPError as e:
-            raise AgentClientError(f"Error getting service info: {e}")
+            logger.error("#> AgentClienta.retrieve_info > Error: %s", e)
+            raise AgentClientError(f"Error getting service info: {e}") from e
 
         self.info: ServiceMetadata = ServiceMetadata.model_validate(response.json())
         if not self.agent or self.agent not in [a.key for a in self.info.agents]:
@@ -125,7 +136,7 @@ class AgentClient:
             request.agent_config = agent_config
         async with httpx.AsyncClient() as client:
             try:
-                logger.info(request.model_dump())
+                logger.info("#> AgentClienta.ainvoke > info: %s", request.model_dump())
                 response = await client.post(
                     f"{self.base_url}/{self.agent}/invoke",
                     json=request.model_dump(),
@@ -134,7 +145,8 @@ class AgentClient:
                 )
                 response.raise_for_status()
             except httpx.HTTPError as e:
-                raise AgentClientError(f"Error: {e}")
+                logger.error("#> AgentClienta.ainvoke > Error: %s", e)
+                raise AgentClientError(f"Error: {e}") from e
 
         return ChatMessage.model_validate(response.json())
 
@@ -166,18 +178,30 @@ class AgentClient:
             request.model = model
         if agent_config:
             request.agent_config = agent_config
-        try:
-            response = httpx.post(
-                f"{self.base_url}/{self.agent}/invoke",
-                json=request.model_dump(),
-                headers=self._headers,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-        except httpx.HTTPError as e:
-            raise AgentClientError(f"Error: {e}")
 
-        return ChatMessage.model_validate(response.json())
+        for attempt in range(self.max_retries):    
+            try:
+                response = httpx.post(
+                    f"{self.base_url}/{self.agent}/invoke",
+                    json=request.model_dump(),
+                    headers=self._headers,
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 413:  # Payload Too Large
+                    if attempt < self.max_retries - 1:
+                        logger.warning("#> AgentClienta.invoke > Attempt: %s", str(attempt + 1))
+                        time.sleep(1 * 60)  # wait one minute to have more tokens per minute
+                        continue
+                    else:
+                        # waited one minute, but it is still too large
+                        raise AgentClientContextSizeError("Message size too large.") from e
+                else:
+                    logger.error("#> AgentClienta.invoke > Error: %s", e)
+                    raise AgentClientError(f"Error: {e}") from e
+                
+            return ChatMessage.model_validate(response.json())
 
     def _parse_stream_line(self, line: str) -> ChatMessage | str | None:
         line = line.strip()
@@ -188,19 +212,22 @@ class AgentClient:
             try:
                 parsed = json.loads(data)
             except Exception as e:
-                raise Exception(f"Error JSON parsing message from server: {e}")
+                logger.error("#> AgentClienta._parse_stream_line > Error: %s", e)
+                raise AgentClientError(f"Error JSON parsing message from server: {e}") from e
             match parsed["type"]:
                 case "message":
                     # Convert the JSON formatted message to an AnyMessage
                     try:
                         return ChatMessage.model_validate(parsed["content"])
                     except Exception as e:
-                        raise Exception(f"Server returned invalid message: {e}")
+                        logger.error("#> AgentClienta._parse_stream_line > Error: %s", e)
+                        raise AgentClientError(f"Server returned invalid message: {e}") from e
                 case "token":
                     # Yield the str token directly
                     return parsed["content"]
                 case "error":
-                    raise Exception(parsed["content"])
+                    logger.error("#> AgentClienta._parse_stream_line > Error")
+                    raise AgentClientError(parsed["content"])
         return None
 
     def stream(
@@ -254,7 +281,8 @@ class AgentClient:
                             break
                         yield parsed
         except httpx.HTTPError as e:
-            raise AgentClientError(f"Error: {e}")
+            logger.error("#> AgentClienta.stream > Error: %s", e)
+            raise AgentClientError(f"Error: {e}") from e
 
     async def astream(
         self,
@@ -308,7 +336,8 @@ class AgentClient:
                                 break
                             yield parsed
             except httpx.HTTPError as e:
-                raise AgentClientError(f"Error: {e}")
+                logger.error("#> AgentClienta.astream > Error: %s", e)
+                raise AgentClientError(f"Error: {e}") from e
 
     async def acreate_feedback(
         self, run_id: str, key: str, score: float, kwargs: dict[str, Any] = {}
@@ -332,7 +361,8 @@ class AgentClient:
                 response.raise_for_status()
                 response.json()
             except httpx.HTTPError as e:
-                raise AgentClientError(f"Error: {e}")
+                logger.error("#> AgentClienta.acreate_feedback > Error: %s", e)
+                raise AgentClientError(f"Error: {e}") from e
 
     def get_history(
         self,
@@ -354,6 +384,7 @@ class AgentClient:
             )
             response.raise_for_status()
         except httpx.HTTPError as e:
-            raise AgentClientError(f"Error: {e}")
+            logger.error("#> AgentClienta.get_history > Error: %s", e)
+            raise AgentClientError(f"Error: {e}") from e
 
         return ChatHistory.model_validate(response.json())
