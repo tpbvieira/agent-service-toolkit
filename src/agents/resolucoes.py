@@ -113,8 +113,8 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
 
     # Format into prompt
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
-    system_prompt = f"""
-        Use as seguintes partes do contexto recuperado para responder à pergunta.
+    generation_prompt = f"""
+        Use as seguintes partes do contexto recuperado para atender a instrução.
         Se você não souber a resposta, diga que não sabe.
         Use no máximo três frases e mantenha a resposta concisa.
         Partes do contexto recuperado:
@@ -126,11 +126,11 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
         if message.type in ("human", "system")
         or (message.type == "ai" and not message.tool_calls)
     ]
-    rag_prompt = [SystemMessage(base_system_prompt + system_prompt)] + conversation_messages
-    logger.info("#> generate > rag_prompt: %s", rag_prompt)
+    resolucoes_prompt = [SystemMessage(base_system_prompt + generation_prompt)] + conversation_messages
+    logger.info("#> generate > resolucoes_prompt: %s", resolucoes_prompt)
     # Run
     llm = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-    response = llm.invoke(rag_prompt, config)
+    response = llm.invoke(resolucoes_prompt, config)
     return {"messages": [response]}
 
 
@@ -187,22 +187,6 @@ vector_store = DatabaseManager().get_vector_store("resolucoes_embd")
 indexed = vector_store.add_documents(documents=unique_doc_splits, ids=unique_doc_ids)
 logger.info("#> WebBaseLoader > Indexed %s chunks", len(indexed))
 
-# # Define the graph
-# agent = StateGraph(AgentState)
-# agent.add_node("model", acall_model)
-# agent.add_node("tools", ToolNode(tools))
-
-# agent.set_entry_point("model")
-
-# # Always run "model" after "tools"
-# agent.add_edge("tools", "model")
-
-# # Connect the graph
-# agent.add_edge("model", END)
-# agent.add_conditional_edges("model", pending_tool_calls, {"tools": "tools", "done": END})
-
-# rag = agent.compile(checkpointer=MemorySaver())
-
 logger.info("#> StateGraph(MessagesState)")
 graph_builder = StateGraph(MessagesState)
 graph_builder.add_node(query_or_respond)
@@ -218,11 +202,10 @@ graph_builder.set_entry_point("query_or_respond")
 graph_builder.add_edge("tools", "generate")
 graph_builder.add_edge("generate", END)
 
-rag = graph_builder.compile(checkpointer=MemorySaver())
+resolucoes_graph = graph_builder.compile(checkpointer=MemorySaver())
 
 # Get the PNG image binary data
-png = rag.get_graph().draw_mermaid_png()
-
+png = resolucoes_graph.get_graph().draw_mermaid_png()
 # Save the binary PNG data to a file in /tmp
 file_path = "/app/graph.png"
 with open(file_path, "wb") as f:
