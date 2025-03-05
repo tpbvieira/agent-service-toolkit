@@ -15,7 +15,7 @@ class AgentInfo(BaseModel):
     )
     description: str = Field(
         description="Description of the agent.",
-        examples=["A Python Code Reviewer."],
+        examples=["A Agent to Assist You."],
     )
 
 

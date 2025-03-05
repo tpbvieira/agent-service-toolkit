@@ -16,7 +16,7 @@ classifiers = [
 requires-python = ">=3.11, <3.13"
 
 dependencies = [
-    "duckduckgo-search>=7.3.0",
+    "duckduckgo-search~=7.3.0",
     "fastapi ~=0.115.5",
     "httpx ~=0.27.2",
     "langchain-core ~=0.3.33",
@@ -29,22 +29,23 @@ dependencies = [
     "langchain-ollama ~=0.2.3",
     "langgraph~=0.2.68",
     "langgraph-checkpoint-sqlite ~=2.0.1",
+    "langgraph-checkpoint-postgres ~=2.0.13",
     "langsmith ~=0.1.145",
-    'SQLAlchemy>=2.0.0',
+    'SQLAlchemy~=2.0.0',
     "numexpr ~=2.10.1",
-    "pyarrow >=18.1.0", # python 3.13 support
+    "pyarrow ~=18.1.0", # python 3.13 support
     "pydantic ~=2.10.1",
     "pydantic-settings ~=2.6.1",
     "pyowm ~=3.3.0",
     "python-dotenv ~=1.0.1",
     "setuptools ~=75.6.0",
     "streamlit ~=1.40.1",
-    "tiktoken >=0.8.0", # python 3.13 support
+    "tiktoken ~=0.8.0", # python 3.13 support
     "uvicorn ~=0.32.1",
-    "langchain-postgres>=0.0.13",
-    "beautifulsoup4>=4.13.3",
-    "psycopg-binary>=3.2.4",
-    "ipython>=8.32.0",
+    "langchain-postgres~=0.0.13",
+    "beautifulsoup4~=4.13.3",
+    "psycopg[binary,pool] ~=3.2.4",
+    "ipython~=8.32.0",
 ]
 
 [dependency-groups]

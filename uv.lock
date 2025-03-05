@@ -26,10 +26,11 @@ dependencies = [
     { name = "langchain-openai" },
     { name = "langchain-postgres" },
     { name = "langgraph" },
+    { name = "langgraph-checkpoint-postgres" },
     { name = "langgraph-checkpoint-sqlite" },
     { name = "langsmith" },
     { name = "numexpr" },
-    { name = "psycopg-binary" },
+    { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -60,11 +61,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "beautifulsoup4", specifier = ">=4.13.3" },
-    { name = "duckduckgo-search", specifier = ">=7.3.0" },
+    { name = "beautifulsoup4", specifier = "~=4.13.3" },
+    { name = "duckduckgo-search", specifier = "~=7.3.0" },
     { name = "fastapi", specifier = "~=0.115.5" },
     { name = "httpx", specifier = "~=0.27.2" },
-    { name = "ipython", specifier = ">=8.32.0" },
+    { name = "ipython", specifier = "~=8.32.0" },
     { name = "langchain-anthropic", specifier = "~=0.3.0" },
     { name = "langchain-aws", specifier = "~=0.2.7" },
     { name = "langchain-community", specifier = "~=0.3.16" },
@@ -73,21 +74,22 @@ requires-dist = [
     { name = "langchain-groq", specifier = "~=0.2.1" },
     { name = "langchain-ollama", specifier = "~=0.2.3" },
     { name = "langchain-openai", specifier = "~=0.2.9" },
-    { name = "langchain-postgres", specifier = ">=0.0.13" },
+    { name = "langchain-postgres", specifier = "~=0.0.13" },
     { name = "langgraph", specifier = "~=0.2.68" },
+    { name = "langgraph-checkpoint-postgres", specifier = "~=2.0.13" },
     { name = "langgraph-checkpoint-sqlite", specifier = "~=2.0.1" },
     { name = "langsmith", specifier = "~=0.1.145" },
     { name = "numexpr", specifier = "~=2.10.1" },
-    { name = "psycopg-binary", specifier = ">=3.2.4" },
-    { name = "pyarrow", specifier = ">=18.1.0" },
+    { name = "psycopg", extras = ["binary", "pool"], specifier = "~=3.2.4" },
+    { name = "pyarrow", specifier = "~=18.1.0" },
     { name = "pydantic", specifier = "~=2.10.1" },
     { name = "pydantic-settings", specifier = "~=2.6.1" },
     { name = "pyowm", specifier = "~=3.3.0" },
     { name = "python-dotenv", specifier = "~=1.0.1" },
     { name = "setuptools", specifier = "~=75.6.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.0" },
+    { name = "sqlalchemy", specifier = "~=2.0.0" },
     { name = "streamlit", specifier = "~=1.40.1" },
-    { name = "tiktoken", specifier = ">=0.8.0" },
+    { name = "tiktoken", specifier = "~=0.8.0" },
     { name = "uvicorn", specifier = "~=0.32.1" },
 ]
 
@@ -481,16 +483,16 @@ wheels = [
 
 [[package]]
 name = "duckduckgo-search"
-version = "7.5.0"
+version = "7.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "lxml" },
     { name = "primp" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/a8/18404f6525aefa80290afa920ed76fbab16472f19015fdb957b7113f3a9e/duckduckgo_search-7.5.0.tar.gz", hash = "sha256:3e28dc5ec9188efa3a7c8532aa05aaf03bb34b79370855760abd55e6051ff79b", size = 24657 }
+sdist = { url = "https://files.pythonhosted.org/packages/d7/10/b70410e2282d6d2ef33bb0ee59183a1171932584212a529e9f4df2b38586/duckduckgo_search-7.3.2.tar.gz", hash = "sha256:bfaffad8da476deeaf10e1016691eaa724debea80b6198d63c877f2f236f8018", size = 24214 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/21/fc2c821a2c92c021f8f8adf9fb36235d1b49525b7cd953e85624296aab94/duckduckgo_search-7.5.0-py3-none-any.whl", hash = "sha256:6a2d3f12ae29b3e076cd43be61f5f73cd95261e0a0f318fe0ad3648d7a5dff03", size = 20238 },
+    { url = "https://files.pythonhosted.org/packages/50/3d/ff57423bc7fc2c6e1f3fe6205cd08b6ffecb8b293af950d221a9e522b2f9/duckduckgo_search-7.3.2-py3-none-any.whl", hash = "sha256:7133579414ac0395351fc448bb2d31546edd66a1487e39091eee4ef908fa1b81", size = 19917 },
 ]
 
 [[package]]
@@ -1213,6 +1215,21 @@ wheels = [
 ]
 
 [[package]]
+name = "langgraph-checkpoint-postgres"
+version = "2.0.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langgraph-checkpoint" },
+    { name = "orjson" },
+    { name = "psycopg" },
+    { name = "psycopg-pool" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/88/f5/42fddc0c9dd165fabe7a4b03eb94422b969c549a936084c2490c96af67ad/langgraph_checkpoint_postgres-2.0.15.tar.gz", hash = "sha256:e598eedf0aab22016cd0bc5cd708c8593fa29e178531f97b3b57def11c4f20f1", size = 26792 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/7f/81f05815254664524d1d71267d2fda76d395d0712f6e47120bb7dee27c6c/langgraph_checkpoint_postgres-2.0.15-py3-none-any.whl", hash = "sha256:0fa2dd8f5aa6374e8e894be69be6f59c661504ef513de8296607d340e04e0a74", size = 35509 },
+]
+
+[[package]]
 name = "langgraph-checkpoint-sqlite"
 version = "2.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1773,6 +1790,14 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/f2/954b1467b3e2ca5945b83b5e320268be1f4df486c3e8ffc90f4e4b707979/psycopg-3.2.4.tar.gz", hash = "sha256:f26f1346d6bf1ef5f5ef1714dd405c67fb365cfd1c6cea07de1792747b167b92", size = 156109 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/49/15114d5f7ee68983f4e1a24d47e75334568960352a07c6f0e796e912685d/psycopg-3.2.4-py3-none-any.whl", hash = "sha256:43665368ccd48180744cab26b74332f46b63b7e06e8ce0775547a3533883d381", size = 198716 },
+]
+
+[package.optional-dependencies]
+binary = [
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy'" },
+]
+pool = [
+    { name = "psycopg-pool" },
 ]
 
 [[package]]
