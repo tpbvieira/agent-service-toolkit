@@ -68,10 +68,10 @@ class DatabaseManager:
     
 
     def get_vector_store(self, collection_name: str) -> PGVector:
-        google_embeddings = get_embedding_model()
+        embedding_model = get_embedding_model()
         return PGVector(
-            embeddings=google_embeddings,
-            collection_name= collection_name,
+            embeddings=embedding_model,
+            collection_name=collection_name,
             connection=self.get_db_url(),
             use_jsonb=True,
         )

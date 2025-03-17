@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 # Set the log level to INFO
 logger.setLevel(logging.INFO)
 # Prevent duplicate logs
-logger.propagate = False  
+logger.propagate = False
 # Check if the logger already has handlers to prevent duplicate entries
 if not logger.handlers:
     # Add a handler (e.g., to console) if one doesn't already exist.
     handler = logging.StreamHandler()  # Sends logs to the console
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
@@ -46,30 +46,34 @@ class AgentState(MessagesState, total=False):
 
 current_date = datetime.now().strftime("%B %d, %Y")
 base_system_prompt = f"""
-    Você é um assistente prestativo, com habilidade para recuperar informações de ferramentas,
-    se você decidir que é necessário para fornecer uma boa resposta.
+    Você é um assistente prestativo, capaz de atender prompts diversos, mas com habilidade 
+    específica de recuperar informações de resoluções da anatel por meio de chamadas a uma 
+    ferramenta, sempre você decidir que é necessário para fornecer uma boa resposta.
     A data de hoje é {current_date}.
     """
 
 # web_search = DuckDuckGoSearchResults(name="WebSearch")
 
+
 @tool(response_format="content_and_artifact")
-def retrieve(query: str):
-    """Retrieve information related to a query."""
-    logger.info("#> retrieve")
-    retrieved_docs = DatabaseManager().get_vector_store("resolucoes_embd").similarity_search(query, k=5)
+def resolution_retrieval(query: str):
+    """Retrieve information related to a query about Anatel's Resolutions."""
+    logger.info("#> resolution_retrieval")
+    retrieved_docs = (
+        DatabaseManager().get_vector_store("resolucoes_embd").similarity_search(query, k=5)
+    )
     serialized = "\n\n".join(
-        (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
-        for doc in retrieved_docs
+        (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}") for doc in retrieved_docs
     )
     return serialized, retrieved_docs
 
 
-# tools_list = [web_search, retrieve]
-tools_list = [retrieve]
+# tools_list = [web_search, resolution_retrieval]
+tools_list = [resolution_retrieval]
 
 
 def wrap_model(model: BaseChatModel) -> RunnableSerializable[AgentState, AIMessage]:
+    """Wrap the model with a preprocessor that adds a system message to the state."""
     logger.info("#> wrap_model")
     preprocessor = RunnableLambda(
         lambda state: [SystemMessage(content=base_system_prompt)] + state["messages"],
@@ -88,7 +92,7 @@ def query_or_respond(state: MessagesState, config: RunnableConfig) -> AgentState
     model_with_tools = wrap_model(model)
     try:
         response = model_with_tools.invoke(state, config)
-    except (AgentClientError) as e:
+    except AgentClientError as e:
         logger.error("#> query_or_respond > error: %s", e)
         response = AIMessage(content="Unexpected error, sorry! Please try again latter.")
     return {"messages": [response]}
@@ -123,11 +127,13 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
     conversation_messages = [
         message
         for message in state["messages"]
-        if message.type in ("human", "system")
-        or (message.type == "ai" and not message.tool_calls)
+        if message.type in ("human", "system") or (message.type == "ai" and not message.tool_calls)
     ]
-    resolucoes_prompt = [SystemMessage(base_system_prompt + generation_prompt)] + conversation_messages
+    resolucoes_prompt = [
+        SystemMessage(base_system_prompt + generation_prompt)
+    ] + conversation_messages
     logger.info("#> generate > resolucoes_prompt: %s", resolucoes_prompt)
+
     # Run
     llm = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
     response = llm.invoke(resolucoes_prompt, config)
@@ -148,43 +154,45 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
 # Load and chunk contents of the blog
 logger.info("#> WebBaseLoader")
 urls = [
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2020/1497-resolucao-740",  # cyber 1
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1965-resolucao-767",  # cyber 2
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2017/943-resolucao-682",   # sei 1
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2024/1990-resolucao-771",  # sei 2
-    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765"   # rgc 1
+    # accessibility
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2016/905-resolucao-n-667",
+    # universalization 
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2022/1689-resolucao-754",
+    # rgg
+    "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765",
 ]
 
 logger.info("#> WebBaseLoader > loading vector database of resolucoes...")
 docs = [WebBaseLoader(url).load() for url in urls]
 docs_list = [item for sublist in docs for item in sublist]
+CHUNK_SIZE = 512
+CHUNK_OVERLAP = CHUNK_SIZE // 5
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    chunk_size=256, chunk_overlap=64
+    chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
 )
-
-doc_splits = text_splitter.split_documents(docs_list)
+doc_chunks = text_splitter.split_documents(docs_list)
 
 def generate_doc_id(doc):
     """Generate a unique ID based on document content."""
     return hashlib.sha256(doc.page_content.encode()).hexdigest()  # Hash content as ID
 
-# Generate document IDs
-doc_id_map = {}
-unique_docs = []
 
-for doc in doc_splits:
-    doc_id = generate_doc_id(doc)
-    if doc_id not in doc_id_map:
-        doc_id_map[doc_id] = doc
-        unique_docs.append(doc)
+# Generate document IDs
+chunk_id_map = {}
+unique_chunks = []
+for chunk in doc_chunks:
+    chunk_id = generate_doc_id(chunk)
+    if chunk_id not in chunk_id_map:
+        chunk_id_map[chunk_id] = chunk
+        unique_chunks.append(chunk)
 
 # Get unique IDs and documents
-unique_doc_ids = list(doc_id_map.keys())
-unique_doc_splits = list(doc_id_map.values())
+unique_chunl_ids = list(chunk_id_map.keys())
+unique_chunks = list(chunk_id_map.values())
 
 # Index chunks
 vector_store = DatabaseManager().get_vector_store("resolucoes_embd")
-indexed = vector_store.add_documents(documents=unique_doc_splits, ids=unique_doc_ids)
+indexed = vector_store.add_documents(documents=unique_chunks, ids=unique_chunl_ids)
 logger.info("#> WebBaseLoader > Indexed %s chunks", len(indexed))
 
 logger.info("#> StateGraph(MessagesState)")
