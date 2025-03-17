@@ -7,10 +7,10 @@ from agents.chatbot import chatbot
 from agents.code_reviewer import code_reviewer
 from agents.command_agent import command_agent
 from agents.research_assistant import research_assistant
-from agents.resolucoes import resolucoes_graph
+from agents.resolutions_agent import resolutions_graph
 from schemas import AgentInfo
 
-DEFAULT_AGENT = "resolucoes"
+DEFAULT_AGENT = "resolutions-agent"
 
 
 @dataclass
@@ -24,7 +24,7 @@ agents: dict[str, Agent] = {
     "bg-task-agent": Agent(description="A background task agent.", graph=bg_task_agent),
     "code-reviewer": Agent(description="A Pytho Code Reviewer.", graph=code_reviewer),
     "chatbot": Agent(description="A simple chatbot.", graph=chatbot),
-    "resolucoes": Agent(description="A chatbot over Anatel's Resoluções.", graph=resolucoes_graph),
+    "resolutions-agent": Agent(description="A chatbot over Anatel's Resoluções.", graph=resolutions_graph),
     "research-assistant": Agent(
         description="A research assistant with web search and calculator.", graph=research_assistant
     ),

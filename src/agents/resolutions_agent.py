@@ -60,7 +60,7 @@ def resolution_retrieval(query: str):
     """Retrieve information related to a query about Anatel's Resolutions."""
     logger.info("#> resolution_retrieval")
     retrieved_docs = (
-        DatabaseManager().get_vector_store("resolucoes_embd").similarity_search(query, k=5)
+        DatabaseManager().get_vector_store("resolutions_embd").similarity_search(query, k=5)
     )
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}") for doc in retrieved_docs
@@ -129,14 +129,14 @@ def generate(state: MessagesState, config: RunnableConfig) -> AgentState:
         for message in state["messages"]
         if message.type in ("human", "system") or (message.type == "ai" and not message.tool_calls)
     ]
-    resolucoes_prompt = [
+    resolutions_prompt = [
         SystemMessage(base_system_prompt + generation_prompt)
     ] + conversation_messages
-    logger.info("#> generate > resolucoes_prompt: %s", resolucoes_prompt)
+    logger.info("#> generate > resolutions_prompt: %s", resolutions_prompt)
 
     # Run
     llm = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-    response = llm.invoke(resolucoes_prompt, config)
+    response = llm.invoke(resolutions_prompt, config)
     return {"messages": [response]}
 
 
@@ -162,7 +162,7 @@ urls = [
     "https://informacoes.anatel.gov.br/legislacao/resolucoes/2023/1900-resolucao-765",
 ]
 
-logger.info("#> WebBaseLoader > loading vector database of resolucoes...")
+logger.info("#> WebBaseLoader > loading vector database of resolutions...")
 docs = [WebBaseLoader(url).load() for url in urls]
 docs_list = [item for sublist in docs for item in sublist]
 CHUNK_SIZE = 512
@@ -191,7 +191,7 @@ unique_chunl_ids = list(chunk_id_map.keys())
 unique_chunks = list(chunk_id_map.values())
 
 # Index chunks
-vector_store = DatabaseManager().get_vector_store("resolucoes_embd")
+vector_store = DatabaseManager().get_vector_store("resolutions_embd")
 indexed = vector_store.add_documents(documents=unique_chunks, ids=unique_chunl_ids)
 logger.info("#> WebBaseLoader > Indexed %s chunks", len(indexed))
 
@@ -210,10 +210,10 @@ graph_builder.set_entry_point("query_or_respond")
 graph_builder.add_edge("tools", "generate")
 graph_builder.add_edge("generate", END)
 
-resolucoes_graph = graph_builder.compile(checkpointer=MemorySaver())
+resolutions_graph = graph_builder.compile(checkpointer=MemorySaver())
 
 # Get the PNG image binary data
-png = resolucoes_graph.get_graph().draw_mermaid_png()
+png = resolutions_graph.get_graph().draw_mermaid_png()
 # Save the binary PNG data to a file in /tmp
 file_path = "/app/graph.png"
 with open(file_path, "wb") as f:
